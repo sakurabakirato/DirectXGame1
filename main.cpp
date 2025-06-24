@@ -366,7 +366,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderで使う
 	rootParameters[0].Descriptor.ShaderRegister = 0;//レジスタ番号0とバインド
 	descriptionRootSignature.pParameters = rootParameters;//ルートパラメータ配列へのポインタ
-	descriptionRootSignature.NumStaticSamplers = _countof(rootParameters);//配列の長さ
+	descriptionRootSignature.NumParameters = _countof(rootParameters); //配列の長さ
 
 
 
