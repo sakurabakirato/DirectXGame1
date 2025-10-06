@@ -22,6 +22,13 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include<fstream>
 #include<sstream>
 
+#include<numbers>
+
+struct Matrix3x3
+{
+	float m[3][3];
+};
+
 struct Matrix4x4 
 {
 	float m[4][4];
@@ -70,7 +77,30 @@ struct ModelData {
 	MaterialData material;
 };
 
+struct Material
+{
+	Vector4 color;
+	int32_t enableLighting;
+	Matrix3x3 uvTransform;
+};
 
+enum BlendMode
+{
+	//ブレンドなし
+	kBlendModeNone,
+	//通常αブレンド。デフォルト。Src * SrcA + Dest * (1 - SrcA)
+	kBlendModeNormal,
+	//加算。Src * SrcA + Dest * 1
+	kBlendModeAdd,
+	//減算。Dest * 1 - Src * SrcA
+	kBlendModeSubtract,
+	//乗算。Src * 0 + Dest * Src
+	kBlendModeMultily,
+	//スクリーン。Src * 0 + Desc * Src
+	kBlendModeScreen,
+	//利用してはいけない
+	kCountOfBlendMode,
+};
 
 // 単位行列
 Matrix4x4 MakeIdentity4x4() {
@@ -937,6 +967,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	D3D12_BLEND_DESC blendDesc{};
 	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 
 	//RasiterzerStateの設定
 	D3D12_RASTERIZER_DESC rastrizeDesc{};
@@ -1021,12 +1058,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
 	//ModelData modelData = LoadObjFile("resources", "axis.obj");
 
+	//球表示用
+	const uint32_t kSubdivision = 12;
+	const uint32_t kNumSphereVertices = kSubdivision * kSubdivision * 6;
+	float pi = std::numbers::pi_v<float>;
+
+
 	//頂点リソースを作る
-	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
+	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * kNumSphereVertices);
 	//頂点バッファビューを作成する
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();//リソースの先頭のアドレスから使う
-	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());//使用するリソースのサイズは頂点のサイズ
+	vertexBufferView.SizeInBytes = sizeof(VertexData) * kNumSphereVertices;//使用するリソースのサイズは頂点のサイズ
 	vertexBufferView.StrideInBytes = sizeof(VertexData);//1頂点あたりのサイズ
 
 	//頂点リソースにデータを書き込む
@@ -1179,7 +1222,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	indexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&indexDataSprite));
 	indexDataSprite[0] = 0; indexDataSprite[1] = 1; indexDataSprite[2] = 2;
 	indexDataSprite[3] = 1; indexDataSprite[4] = 3; indexDataSprite[5] = 2;
-
 
 
 	MSG msg{};
