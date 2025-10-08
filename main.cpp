@@ -1054,9 +1054,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	*/
 
 	//モデル読み込み
-	ModelData modelData = LoadObjFile("resources", "plane.obj");
+	/*ModelData modelData = LoadObjFile("resources", "plane.obj");*/
 	
 	//ModelData modelData = LoadObjFile("resources", "axis.obj");
+
+	ModelData modelData = LoadObjFile("resources", "fence.obj");
 
 	//球表示用
 	const uint32_t kSubdivision = 12;
