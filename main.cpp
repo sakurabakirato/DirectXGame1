@@ -1008,7 +1008,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//Depthの機能を有効化する
 	depthStencilDesc.DepthEnable = true;
 	//書き込みします
-	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	/*depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;*/
 	//比較関数はLessEqual。つまり、近ければ描画する
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
@@ -1020,6 +1020,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ID3D12PipelineState* graphicsPipelineState = nullptr;
 	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
+
+
 
 	/*
 	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * 6);
@@ -1226,6 +1228,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	indexDataSprite[3] = 1; indexDataSprite[4] = 3; indexDataSprite[5] = 2;
 
 
+
+
 	MSG msg{};
 	//ウィンドウの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) 
@@ -1321,6 +1325,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
 			commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+
+
 
 			
 			//Spriteの描画。変更が必要なものだけ変更する
