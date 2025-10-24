@@ -1420,15 +1420,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 			
-			//Spriteの描画。変更が必要なものだけ変更する
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);//VBVを設定
-			//TransformationMatrixCBufferの場所を設定
-			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-			//インデックスを指定
-			commandList->IASetIndexBuffer(&indexBufferViewSprite);//IBVを設定
+			////Spriteの描画。変更が必要なものだけ変更する
+			//commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);//VBVを設定
+			////TransformationMatrixCBufferの場所を設定
+			//commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+			////インデックスを指定
+			//commandList->IASetIndexBuffer(&indexBufferViewSprite);//IBVを設定
 
-			//描画！(DrawCall/ドローコール)6個のインデックスを使用し1つのインスタンスを描画。その他当面0で良い
-			commandList->DrawIndexedInstanced(6, 1, 0, 0,0);
+			////描画！(DrawCall/ドローコール)6個のインデックスを使用し1つのインスタンスを描画。その他当面0で良い
+			//commandList->DrawIndexedInstanced(6, 1, 0, 0,0);
 			
 
 			//モデル描画
