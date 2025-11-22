@@ -114,6 +114,8 @@ struct Particle
 	Transform transform;
 	Vector3 velocity;
 	Vector4 color;
+	float lifeTime;
+	float currentTime;
 };
 
 struct ParticleForGPU
@@ -744,12 +746,16 @@ Particle MakeNewParticle(std::mt19937& randomEngine)
 {
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 	std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
+	std::uniform_real_distribution<float> distTime(1.0f, 3.0f);
+
 	Particle particle{};
 	particle.transform.scale = { 1.0f,1.0f,1.0f };
 	particle.transform.rotate = { 0.0f,0.0f,0.0f };
 	particle.transform.translate = { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
 	particle.velocity = { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
 	particle.color = { distColor(randomEngine),distColor(randomEngine),distColor(randomEngine),1.0f };
+	particle.lifeTime = distTime(randomEngine);
+	particle.currentTime =0;
 
 	return particle;
 }
@@ -1054,14 +1060,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
 
 	//通常
-	blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	/*blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
 	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;*/
 
 	//加算
-	//blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	//blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-	//blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
 
 
 	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
@@ -1101,8 +1107,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	//Depthの機能を有効化する
 	depthStencilDesc.DepthEnable = true;
-	//書き込みします
-	/*depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;*/
+	//Depthの書き込みをしない
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	//比較関数はLessEqual。つまり、近ければ描画する
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
@@ -1152,9 +1158,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//モデル読み込み
 	ModelData modelData = LoadObjFile("resources", "plane.obj");
 	
+	
 	//ModelData modelData = LoadObjFile("resources", "axis.obj");
 
 	/*ModelData modelData = LoadObjFile("resources", "fence.obj");*/
+
+	/*ModelData modelData = LoadObjFile("resources", "circle.png");*/
 
 	//球表示用
 	const uint32_t kSubdivision = 12;
@@ -1229,7 +1238,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//Textureを読んで転送する
 	//DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
 
-	DirectX::ScratchImage mipImages = LoadTexture(modelData.material.textureFilePath);
+	DirectX::ScratchImage mipImages = LoadTexture("resources/circle.png");
+
+	//DirectX::ScratchImage mipImages = LoadTexture(modelData.material.textureFilePath);
 
 	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
 	ID3D12Resource* textureResouce = CreateTextureResource(device, metadata);
@@ -1323,6 +1334,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//インスタンシング
 	const uint32_t kNumInstance = 10;
+	const uint32_t kNumMaxInstance = 10;
 	////Instancing用のTransformationMatrixリソースを作る
 	//Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource = CreateBufferResource(device, sizeof(TransformationMatrix) * kNumInstance);
 	
@@ -1337,7 +1349,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::random_device seedGenerator;
 	std::mt19937 randomEngine(seedGenerator());
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
-
 
 
 	Particle particles[kNumInstance]{};
@@ -1423,14 +1434,40 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			Matrix4x4 viewProjectionMatrix = Multiply(viewMatrix, projectionMatrix);
 
-			for (uint32_t index = 0; index < kNumInstance; ++index) {
+			uint32_t numInstance = 0;//描画すべきインスタンス数
+			bool useUpdate = false;
+
+			for (uint32_t index = 0; index < kNumMaxInstance; index++)
+			{
+				if (particles[index].lifeTime <= particles[index].currentTime)//生存期間を過ぎていたら更新せず描画対象にしない
+				{
+					continue;
+				}
+
 				Matrix4x4 worldMatrix =
 					MakeAffineMatrix(particles[index].transform.scale, particles[index].transform.rotate, particles[index].transform.translate);
 				Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
 				instancingData[index].WVP = worldViewProjectionMatrix;
 				instancingData[index].World = worldMatrix;
-				particles[index].transform.translate += particles[index].velocity * kDeltaTime;
+
+				if (useUpdate)
+				{
+					particles[index].transform.translate += particles[index].velocity * kDeltaTime;
+					particles[index].currentTime += kDeltaTime;//経過時間をたす
+				}
+				
+				float alpha = 1.0f - (particles[index].currentTime / particles[index].lifeTime);
+
+				instancingData[numInstance].WVP = worldViewProjectionMatrix;
+				instancingData[numInstance].World = worldMatrix;
+				instancingData[numInstance].color = particles[index].color;
+				instancingData[numInstance].color.w = alpha;
+
+				++numInstance;//生きているParticleの数を一つカウント
+
 			}
+
+			
 
 
 			ImGui::ShowDemoWindow();
@@ -1440,6 +1477,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
 			ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
 			ImGui::DragFloat2("Sprite transform", &particlesprite.translate.x, 1.0f);
+			ImGui::Checkbox("Update", &useUpdate);
 			ImGui::End();
 
 			ImGui::Render();
@@ -1492,7 +1530,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//SRVのDexcriptorTableの先頭を設定。2はrootParameter[2]である。
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
-			commandList->DrawInstanced(UINT(modelData.vertices.size()), kNumInstance, 0, 0);
+			commandList->DrawInstanced(UINT(modelData.vertices.size()), numInstance, 0, 0);
 
 
 
@@ -1509,9 +1547,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			
 
 			//モデル描画
-
-			commandList->DrawInstanced(UINT(modelData.vertices.size()), kNumInstance, 0, 0);
-
+			if (numInstance > 0)
+			{
+				commandList->DrawInstanced(UINT(modelData.vertices.size()), numInstance, 0, 0);
+			}
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
@@ -1579,7 +1618,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexResourceSprite->Release();
 
 	srvDescriptorHeap->Release();
-
+	
 
 	wvpResource->Release();
 	materialResource->Release();
