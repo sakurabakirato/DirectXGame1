@@ -1393,6 +1393,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	device->CreateShaderResourceView(instancingResource.Get(), &instancingSrvDesc, instancingSrvHandleCPU);
 
 	
+	bool useUpdate = false;
 
 
 	MSG msg{};
@@ -1435,7 +1436,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 viewProjectionMatrix = Multiply(viewMatrix, projectionMatrix);
 
 			uint32_t numInstance = 0;//描画すべきインスタンス数
-			bool useUpdate = false;
 
 			for (uint32_t index = 0; index < kNumMaxInstance; index++)
 			{
