@@ -1346,7 +1346,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//Spriteの描画。変更が必要なものだけ変更する
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);//VBVを設定
 			//マテリアルCBufferの場所を設定
-			commandList->SetComputeRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+			/*commandList->SetComputeRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());*/
+			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 
 
 			//TransformationMatrixCBufferの場所を設定
@@ -1355,7 +1356,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
 			//描画！(DrawCall/ドローコール)
-			commandList->DrawInstanced(kNumSphereVertices, 1, 0, 0);
+			commandList->DrawInstanced(6, 1, 0, 0);
 
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
