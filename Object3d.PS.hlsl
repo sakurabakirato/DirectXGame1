@@ -4,7 +4,7 @@ struct Material
 {
     float32_t4 color;
     int32_t enableLighting;
-    float32_t3x3 uvTransform;
+    //float32_t3x3 uvTransform;
     float32_t shininess;
 };
 
@@ -59,7 +59,7 @@ PixelShaderOutput main(VertexShaderOutput input)
         //拡散反射
         float32_t3 diffuse = gMaterial.color.rgb * textureColor.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
         //鏡面反射
-        float specular = gDirectionalLight.color.rgb * gDirectionalLight.intensity * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
+        float32_t3 specular = gDirectionalLight.color.rgb * gDirectionalLight.intensity * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
         //拡散反射+鏡面反射
         output.color.rgb = diffuse + specular;
         //アルファは今までどうり
