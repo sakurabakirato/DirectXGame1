@@ -1284,8 +1284,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			//方向は正規化
-			directionalLightData->direction = Normalize(directionalLightData->direction);
+		
 
 			transform.rotate.y += 0.03f;
 			/*Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
@@ -1316,6 +1315,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::End();
 
 			ImGui::Render();
+
+
+			//方向は正規化
+			directionalLightData->direction = Normalize(directionalLightData->direction);
 
 			//これから書き込むバックバッファのインデックスを取得
 			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
